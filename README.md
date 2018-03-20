@@ -1,4 +1,7 @@
-# Bench
+<div align="center">
+    <img src="https://github.com/frappe/design/blob/master/logos/bench-logo.svg" height="128">
+    <h2>Frappe Bench</h2>
+</div>
 
 [![Build Status](https://travis-ci.org/frappe/bench.svg?branch=master)](https://travis-ci.org/frappe/bench)
 
@@ -31,7 +34,7 @@ To manually install frappe/erpnext here are the steps
 Install bench as a *non root* user,
 
 	git clone https://github.com/frappe/bench bench-repo
-	sudo pip install -e bench-repo
+	pip install --user -e bench-repo
 
 Note: Please do not remove the bench directory the above commands will create
 
@@ -132,7 +135,7 @@ For production:
 #### How do I start ERPNext
 
 1. For development: Go to your bench folder (`frappe-bench` by default) and start the bench with `bench start`
-2. For production: Your process will be setup and managed by `nginx` and `supervisor`. [Setup Production](https://frappe.github.io/frappe/user/en/bench/guides/setup-production.html)
+2. For production: Your process will be setup and managed by `nginx` and `supervisor`. [Setup Production](https://frappe.io/docs/user/en/bench/guides/setup-production.html)
 
 ---
 
@@ -170,19 +173,19 @@ You can also run the parts of the bench selectively.
 
 Guides
 =======
-- [Configuring HTTPS](https://frappe.github.io/frappe/user/en/bench/guides/configuring-https.html)
-- [Using Let's Encrypt to setup HTTPS](https://frappe.github.io/frappe/user/en/bench/guides/lets-encrypt-ssl-setup.html)
-- [Diagnosing the Scheduler](https://frappe.github.io/frappe/user/en/bench/guides/diagnosing-the-scheduler.html)
-- [Change Hostname](https://frappe.github.io/frappe/user/en/bench/guides/adding-custom-domains)
-- [Manual Setup](https://frappe.github.io/frappe/user/en/bench/guides/manual-setup.html)
-- [Setup Production](https://frappe.github.io/frappe/user/en/bench/guides/setup-production.html)
-- [Setup Multitenancy](https://frappe.github.io/frappe/user/en/bench/guides/setup-multitenancy.html)
+- [Configuring HTTPS](https://frappe.io/docs/user/en/bench/guides/configuring-https.html)
+- [Using Let's Encrypt to setup HTTPS](https://frappe.io/docs/user/en/bench/guides/lets-encrypt-ssl-setup.html)
+- [Diagnosing the Scheduler](https://frappe.io/docs/user/en/bench/guides/diagnosing-the-scheduler.html)
+- [Change Hostname](https://frappe.io/docs/user/en/bench/guides/adding-custom-domains)
+- [Manual Setup](https://frappe.io/docs/user/en/bench/guides/manual-setup.html)
+- [Setup Production](https://frappe.io/docs/user/en/bench/guides/setup-production.html)
+- [Setup Multitenancy](https://frappe.io/docs/user/en/bench/guides/setup-multitenancy.html)
 - [Stopping Production](https://github.com/frappe/bench/wiki/Stopping-Production-and-starting-Development)
 
 
 Resources
 =======
 
-- [Background Services](https://frappe.github.io/frappe/user/en/bench/resources/background-services.html)
-- [Bench Commands Cheat Sheet](https://frappe.github.io/frappe/user/en/bench/resources/bench-commands-cheatsheet.html)
-- [Bench Procfile](https://frappe.github.io/frappe/user/en/bench/resources/bench-procfile.html)
+- [Background Services](https://frappe.io/docs/user/en/bench/resources/background-services.html)
+- [Bench Commands Cheat Sheet](https://frappe.io/docs/user/en/bench/resources/bench-commands-cheatsheet.html)
+- [Bench Procfile](https://frappe.io/docs/user/en/bench/resources/bench-procfile.html)
