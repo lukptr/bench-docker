@@ -59,7 +59,7 @@ def install_bench(args):
 			})
 
 	success = run_os_command({
-		'pip': "sudo pip install ansible==2.4.1"
+		'pip': "sudo pip install ansible"
 	})
 
 	if not success:
@@ -81,6 +81,14 @@ def install_bench(args):
 
 	if args.user == 'root':
 		raise Exception('Please run this script as a non-root user with sudo privileges, but without using sudo or pass --user=USER')
+
+	# Python executable
+	if not args.production:
+		dist_name, dist_version = get_distribution_info()
+		if dist_name=='centos':
+			args.python = 'python3.6'
+		else:
+			args.python = 'python3'
 
 	# create user if not exists
 	extra_vars = vars(args)
@@ -116,7 +124,7 @@ def install_bench(args):
 		shutil.rmtree(tmp_bench_repo)
 
 def check_distribution_compatibility():
-	supported_dists = {'ubuntu': [14, 15, 16], 'debian': [7, 8, 9],
+	supported_dists = {'ubuntu': [14, 15, 16], 'debian': [8, 9],
 		'centos': [7], 'macos': [10.9, 10.10, 10.11, 10.12]}
 
 	dist_name, dist_version = get_distribution_info()
@@ -199,7 +207,7 @@ def clone_bench_repo(args):
 		clone_path = tmp_bench_repo
 
 	branch = args.bench_branch or 'master'
-	repo_url = args.repo_url or 'https://github.com/lukptr/bench-docker --branch test'
+	repo_url = args.repo_url or 'https://github.com/lukptr/bench-docker'
 
 
 	success = run_os_command(
@@ -263,7 +271,7 @@ def get_passwords(args):
 				mysql_root_password = getpass.unix_getpass(prompt='Please enter mysql root password: ')
 				conf_mysql_passwd = getpass.unix_getpass(prompt='Re-enter mysql root password: ')
 
-				if mysql_root_password != conf_mysql_passwd:
+				if mysql_root_password != conf_mysql_passwd or mysql_root_password == '':
 					mysql_root_password = ''
 					continue
 
@@ -272,7 +280,7 @@ def get_passwords(args):
 				admin_password = getpass.unix_getpass(prompt='Please enter the default Administrator user password: ')
 				conf_admin_passswd = getpass.unix_getpass(prompt='Re-enter Administrator password: ')
 
-				if admin_password != conf_admin_passswd:
+				if admin_password != conf_admin_passswd or admin_password == '':
 					admin_password = ''
 					continue
 
@@ -370,6 +378,11 @@ def parse_commandline_args():
 	parser.add_argument('--mysql-root-password', dest='mysql_root_password', help='Set mysql root password')
 	parser.add_argument('--admin-password', dest='admin_password', help='Set admin password')
 	parser.add_argument('--bench-name', dest='bench_name', help='Create bench with specified name. Default name is frappe-bench')
+
+	# Python interpreter to be used
+	parser.add_argument('--python', dest='python', default='python',
+		help=argparse.SUPPRESS
+	)
 
 	args = parser.parse_args()
 
