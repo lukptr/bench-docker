@@ -36,6 +36,7 @@ def get_env_cmd(cmd, bench_path='.'):
 def init(path, apps_path=None, no_procfile=False, no_backups=False,
 		no_auto_update=False, frappe_path=None, frappe_branch=None, wheel_cache_dir=None,
 		verbose=False, clone_from=None, skip_redis_config_generation=False,
+		clone_without_update=False,
 		ignore_exist = False,
 		python		 = 'python'): # Let's change when we're ready. - <achilles@frappe.io>
 	from .app import get_app, install_apps_from_path
@@ -56,7 +57,7 @@ def init(path, apps_path=None, no_procfile=False, no_backups=False,
 		try:
 			os.makedirs(os.path.join(path, dirname))
 		except OSError as e:
-			if e.errno != os.errno.EEXIST:
+			if e.errno == os.errno.EEXIST:
 				pass
 
 	setup_logging()
@@ -66,7 +67,7 @@ def init(path, apps_path=None, no_procfile=False, no_backups=False,
 	make_config(path)
 
 	if clone_from:
-		clone_apps_from(bench_path=path, clone_from=clone_from)
+		clone_apps_from(bench_path=path, clone_from=clone_from, update_app=not clone_without_update)
 	else:
 		if not frappe_path:
 			frappe_path = 'https://github.com/frappe/frappe.git'
@@ -94,7 +95,7 @@ def init(path, apps_path=None, no_procfile=False, no_backups=False,
 	if not no_auto_update:
 		setup_auto_update(bench_path=path)
 
-def clone_apps_from(bench_path, clone_from):
+def clone_apps_from(bench_path, clone_from, update_app=True):
 	from .app import install_app
 	print('Copying apps from {0}...'.format(clone_from))
 	subprocess.check_output(['cp', '-R', os.path.join(clone_from, 'apps'), bench_path])
@@ -107,22 +108,22 @@ def clone_apps_from(bench_path, clone_from):
 	def setup_app(app):
 		# run git reset --hard in each branch, pull latest updates and install_app
 		app_path = os.path.join(bench_path, 'apps', app)
-		if os.path.exists(os.path.join(app_path, '.git')):
-			print('Cleaning up {0}'.format(app))
 
-			# remove .egg-ino
-			subprocess.check_output(['rm', '-rf', app + '.egg-info'], cwd=app_path)
+		# remove .egg-ino
+		subprocess.check_output(['rm', '-rf', app + '.egg-info'], cwd=app_path)
 
+		if update_app and os.path.exists(os.path.join(app_path, '.git')):
 			remotes = subprocess.check_output(['git', 'remote'], cwd=app_path).strip().split()
 			if 'upstream' in remotes:
 				remote = 'upstream'
 			else:
 				remote = remotes[0]
+			print('Cleaning up {0}'.format(app))
 			branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], cwd=app_path).strip()
 			subprocess.check_output(['git', 'reset', '--hard'], cwd=app_path)
 			subprocess.check_output(['git', 'pull', '--rebase', remote, branch], cwd=app_path)
 
-			install_app(app, bench_path)
+		install_app(app, bench_path)
 
 	with open(os.path.join(clone_from, 'sites', 'apps.txt'), 'r') as f:
 		apps = f.read().splitlines()
@@ -166,7 +167,7 @@ def setup_env(bench_path='.', python = 'python'):
 	python = which(python, raise_err = True)
 
 	exec_cmd('virtualenv -q {} -p {}'.format('env', python), cwd=bench_path)
-	exec_cmd('./env/bin/pip -q install --upgrade pip', cwd=bench_path)
+	exec_cmd('./env/bin/pip -q install --upgrade pip==9.0.3', cwd=bench_path)
 	exec_cmd('./env/bin/pip -q install wheel', cwd=bench_path)
 	# exec_cmd('./env/bin/pip -q install https://github.com/frappe/MySQLdb1/archive/MySQLdb-1.2.5-patched.tar.gz', cwd=bench_path)
 	exec_cmd('./env/bin/pip -q install six', cwd=bench_path)
@@ -175,35 +176,6 @@ def setup_env(bench_path='.', python = 'python'):
 def setup_socketio(bench_path='.'):
 	exec_cmd("npm install socket.io redis express superagent cookie babel-core less chokidar \
 		babel-cli babel-preset-es2015 babel-preset-es2016 babel-preset-es2017 babel-preset-babili", cwd=bench_path)
-
-def new_site(site, mariadb_root_password=None, admin_password=None, bench_path='.'):
-	"""
-	Creates a new site in the specified bench, default is current bench
-	"""
-
-	logger.info('creating new site {}'.format(site))
-
-	# consider an existing passwords.txt file
-	passwords_file_path = os.path.join(os.path.expanduser('~'), 'passwords.txt')
-	if os.path.isfile(passwords_file_path):
-		with open(passwords_file_path, 'r') as f:
-			passwords = json.load(f)
-			mariadb_root_password, admin_password = passwords['mysql_root_password'], passwords['admin_password']
-
-	mysql_root_password_fragment = '--root_password {}'.format(mariadb_root_password) if mariadb_root_password else ''
-	admin_password_fragment = '--admin_password {}'.format(admin_password) if admin_password else ''
-
-	exec_cmd("{frappe} {site} --install {db_name} {mysql_root_password_fragment} {admin_password_fragment}".format(
-				frappe=get_frappe(bench_path=bench_path),
-				site=site,
-				db_name=hashlib.sha1(site).hexdigest()[:10],
-				mysql_root_password_fragment=mysql_root_password_fragment,
-				admin_password_fragment=admin_password_fragment
-			), cwd=os.path.join(bench_path, 'sites'))
-
-	if len(get_sites(bench_path=bench_path)) == 1:
-		exec_cmd("{frappe} --use {site}".format(frappe=get_frappe(bench_path=bench_path), site=site), cwd=os.path.join(bench_path, 'sites'))
-
 
 def patch_sites(bench_path='.'):
 	bench.set_frappe_version(bench_path=bench_path)
@@ -436,8 +408,8 @@ def update_requirements(bench_path='.'):
 	print('Updating Python libraries...')
 	pip = os.path.join(bench_path, 'env', 'bin', 'pip')
 
-	# upgrade pip to latest
-	exec_cmd("{pip} install --upgrade pip".format(pip=pip))
+	# pip 10 seems to have a few problems associated with it, temporary freeze pip at 9.0.3 
+	exec_cmd("{pip} install --upgrade pip==9.0.3".format(pip=pip))
 
 	apps_dir = os.path.join(bench_path, 'apps')
 

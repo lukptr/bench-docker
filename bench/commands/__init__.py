@@ -31,12 +31,11 @@ def bench_command(bench_path='.'):
 	setup_logging(bench_path=bench_path)
 
 
-from bench.commands.make import init, get_app, new_app, remove_app, new_site
+from bench.commands.make import init, get_app, new_app, remove_app
 bench_command.add_command(init)
 bench_command.add_command(get_app)
 bench_command.add_command(new_app)
 bench_command.add_command(remove_app)
-bench_command.add_command(new_site)
 
 
 from bench.commands.update import update, retry_upgrade, switch_to_branch, switch_to_master, switch_to_develop
@@ -48,7 +47,7 @@ bench_command.add_command(switch_to_develop)
 
 from bench.commands.utils import (start, restart, set_nginx_port, set_ssl_certificate, set_ssl_certificate_key, set_url_root,
 	set_mariadb_host, set_default_site, download_translations, shell, backup_site, backup_all_sites, release, renew_lets_encrypt,
-	disable_production, bench_src, prepare_staging)
+	disable_production, bench_src)
 bench_command.add_command(start)
 bench_command.add_command(restart)
 bench_command.add_command(set_nginx_port)
@@ -62,7 +61,6 @@ bench_command.add_command(shell)
 bench_command.add_command(backup_site)
 bench_command.add_command(backup_all_sites)
 bench_command.add_command(release)
-bench_command.add_command(prepare_staging)
 bench_command.add_command(renew_lets_encrypt)
 bench_command.add_command(disable_production)
 bench_command.add_command(bench_src)
@@ -160,7 +158,8 @@ def migrate_env(python, no_backup = False):
 		), cwd = path)
 
 		pip = osp.join(pvenv, 'bin', 'pip')
-		exec_cmd('{pip} install --upgrade pip'.format(pip=pip))
+		# pip 10 seems to have a few problems associated with it, temporary freeze pip at 9.0.3 
+		exec_cmd('{pip} install --upgrade pip==9.0.3'.format(pip=pip))
 		exec_cmd('{pip} install --upgrade setuptools'.format(pip=pip))
 		# TODO: Options
 
@@ -182,3 +181,7 @@ def migrate_env(python, no_backup = False):
 		raise
 
 bench_command.add_command(migrate_env)
+
+from bench.commands.make import exclude_app_for_update, include_app_for_update
+bench_command.add_command(exclude_app_for_update)
+bench_command.add_command(include_app_for_update)
