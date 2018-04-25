@@ -36,26 +36,22 @@ def install_bench(args):
 	# secure pip installation
 	if find_executable('pip'):
 		run_os_command({
-			'yum': 'sudo pip install --upgrade setuptools pip',
-			'apt-get': 'sudo pip install --upgrade setuptools pip',
-			'brew': "sudo pip install --upgrade setuptools pip --user"
+			'pip': 'sudo pip install --upgrade setuptools pip==9.0.3'
 		})
 
 	else:
 		if not os.path.exists("get-pip.py"):
 			run_os_command({
-				'apt-get': 'wget https://bootstrap.pypa.io/get-pip.py',
-				'yum': 'wget https://bootstrap.pypa.io/get-pip.py'
+				'wget': 'wget https://bootstrap.pypa.io/get-pip.py'
 			})
 
 		success = run_os_command({
-			'apt-get': 'sudo python get-pip.py',
-			'yum': 'sudo python get-pip.py',
+			'python': 'sudo python get-pip.py --force-reinstall'
 		})
 
 		if success:
 			run_os_command({
-				'pip': 'sudo pip install --upgrade pip setuptools',
+				'pip': 'sudo pip install --upgrade pip==9.0.3 setuptools',
 			})
 
 	success = run_os_command({
@@ -107,8 +103,17 @@ def install_bench(args):
 	if args.production:
 		extra_vars.update(max_worker_connections=multiprocessing.cpu_count() * 1024)
 
-	branch = 'master' if args.production else 'develop'
-	extra_vars.update(branch=branch)
+	if args.frappe_branch:
+		frappe_branch = args.frappe_branch
+	else:
+		frappe_branch = 'master' if args.production else 'develop'
+	extra_vars.update(frappe_branch=frappe_branch)
+
+	if args.erpnext_branch:
+		erpnext_branch = args.erpnext_branch
+	else:
+		erpnext_branch = 'master' if args.production else 'develop'
+	extra_vars.update(erpnext_branch=erpnext_branch)
 	
 	bench_name = 'frappe-bench' if not args.bench_name else args.bench_name
 	extra_vars.update(bench_name=bench_name)
@@ -362,6 +367,18 @@ def parse_commandline_args():
 	parser.add_argument('--bench-branch', dest='bench_branch', help='Clone a particular branch of bench repository')
 
 	parser.add_argument('--repo-url', dest='repo_url', help='Clone bench from the given url')
+
+	parser.add_argument('--frappe-repo-url', dest='frappe_repo_url', action='store', default='https://github.com/frappe/frappe',
+		help='Clone frappe from the given url')
+
+	parser.add_argument('--frappe-branch', dest='frappe_branch', action='store',
+		help='Clone a particular branch of frappe')
+	
+	parser.add_argument('--erpnext-repo-url', dest='erpnext_repo_url', action='store', default='https://github.com/frappe/erpnext', 
+		help='Clone erpnext from the given url')
+	
+	parser.add_argument('--erpnext-branch', dest='erpnext_branch', action='store',
+		help='Clone a particular branch of erpnext')
 
 	# To enable testing of script using Travis, this should skip the prompt
 	parser.add_argument('--run-travis', dest='run_travis', action='store_true', default=False,
