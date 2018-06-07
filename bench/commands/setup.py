@@ -121,10 +121,11 @@ def set_ssh_port(port, force=False):
 @click.command('lets-encrypt')
 @click.argument('site')
 @click.option('--custom-domain')
-def setup_letsencrypt(site, custom_domain):
+@click.option('-n', '--non-interactive', default=False, is_flag=True, help="Run certbot non-interactively. Shouldn't be used on 1'st attempt")
+def setup_letsencrypt(site, custom_domain, non_interactive):
 	"Setup lets-encrypt for site"
 	from bench.config.lets_encrypt import setup_letsencrypt
-	setup_letsencrypt(site, custom_domain, bench_path='.')
+	setup_letsencrypt(site, custom_domain, bench_path='.', interactive=not non_interactive)
 
 
 @click.command('procfile')
@@ -260,6 +261,18 @@ def setup_nginx_proxy_jail(**kwargs):
 	from bench.utils import run_playbook
 	run_playbook('roles/fail2ban/tasks/configure_nginx_jail.yml', extra_vars=kwargs)
 
+@click.command('systemd')
+@click.option('--user')
+@click.option('--yes', help='Yes to regeneration of systemd config files', is_flag=True, default=False)
+@click.option('--stop', help='Stop bench services', is_flag=True, default=False)
+@click.option('--create-symlinks', help='Create Symlinks', is_flag=True, default=False)
+@click.option('--delete-symlinks', help='Delete Symlinks', is_flag=True, default=False)
+def setup_systemd(user=None, yes=False, stop=False, create_symlinks=False, delete_symlinks=False):
+	"generate configs for systemd with an optional user argument"
+	from bench.config.systemd import generate_systemd_config
+	generate_systemd_config(bench_path=".", user=user, yes=yes,
+		stop=stop, create_symlinks=create_symlinks, delete_symlinks=delete_symlinks)
+
 setup.add_command(setup_sudoers)
 setup.add_command(setup_nginx)
 setup.add_command(reload_nginx)
@@ -283,3 +296,4 @@ setup.add_command(setup_firewall)
 setup.add_command(set_ssh_port)
 setup.add_command(setup_roles)
 setup.add_command(setup_nginx_proxy_jail)
+setup.add_command(setup_systemd)
