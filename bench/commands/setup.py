@@ -121,10 +121,21 @@ def set_ssh_port(port, force=False):
 @click.command('lets-encrypt')
 @click.argument('site')
 @click.option('--custom-domain')
-def setup_letsencrypt(site, custom_domain):
+@click.option('-n', '--non-interactive', default=False, is_flag=True, help="Run certbot non-interactively. Shouldn't be used on 1'st attempt")
+def setup_letsencrypt(site, custom_domain, non_interactive):
 	"Setup lets-encrypt for site"
 	from bench.config.lets_encrypt import setup_letsencrypt
-	setup_letsencrypt(site, custom_domain, bench_path='.')
+	setup_letsencrypt(site, custom_domain, bench_path='.', interactive=not non_interactive)
+
+
+@click.command('wildcard-ssl')
+@click.argument('domain')
+@click.option('--email')
+@click.option('--exclude-base-domain', default=False, is_flag=True, help="SSL Certificate not applicable for base domain")
+def setup_wildcard_ssl(domain, email, exclude_base_domain):
+	''' Setup wildcard ssl certificate '''
+	from bench.config.lets_encrypt import setup_wildcard_ssl
+	setup_wildcard_ssl(domain, email, bench_path='.', exclude_base_domain=exclude_base_domain)
 
 
 @click.command('procfile')
@@ -161,7 +172,10 @@ def setup_node_requirements():
 
 
 @click.command('manager')
-def setup_manager():
+@click.option('--yes', help='Yes to regeneration of nginx config file', default=False, is_flag=True)
+@click.option('--port', help='Port on which you want to run bench manager', default=23624)
+@click.option('--domain', help='Domain on which you want to run bench manager')
+def setup_manager(yes=False, port=23624, domain=None):
 	"Setup bench-manager.local site with the bench_manager app installed on it"
 	from six.moves import input
 	create_new_site = True
@@ -178,6 +192,24 @@ def setup_manager():
 		exec_cmd("bench get-app bench_manager")
 
 	exec_cmd("bench --site bench-manager.local install-app bench_manager")
+
+	from bench.config.common_site_config import get_config
+	bench_path = '.'
+	conf = get_config(bench_path)
+	if conf.get('restart_supervisor_on_update') or conf.get('restart_systemd_on_update'):
+		# implicates a production setup or so I presume
+		if not domain:
+			print("Please specify the site name on which you want to host bench-manager using the 'domain' flag")
+			sys.exit(1)
+	
+		from bench.utils import get_sites, get_bench_name
+		bench_name = get_bench_name(bench_path)
+
+		if domain not in get_sites(bench_path):
+			raise Exception("No such site")
+
+		from bench.config.nginx import make_bench_manager_nginx_conf
+		make_bench_manager_nginx_conf(bench_path, yes=yes, port=port, domain=domain)
 
 
 @click.command('config')
@@ -260,12 +292,25 @@ def setup_nginx_proxy_jail(**kwargs):
 	from bench.utils import run_playbook
 	run_playbook('roles/fail2ban/tasks/configure_nginx_jail.yml', extra_vars=kwargs)
 
+@click.command('systemd')
+@click.option('--user')
+@click.option('--yes', help='Yes to regeneration of systemd config files', is_flag=True, default=False)
+@click.option('--stop', help='Stop bench services', is_flag=True, default=False)
+@click.option('--create-symlinks', help='Create Symlinks', is_flag=True, default=False)
+@click.option('--delete-symlinks', help='Delete Symlinks', is_flag=True, default=False)
+def setup_systemd(user=None, yes=False, stop=False, create_symlinks=False, delete_symlinks=False):
+	"generate configs for systemd with an optional user argument"
+	from bench.config.systemd import generate_systemd_config
+	generate_systemd_config(bench_path=".", user=user, yes=yes,
+		stop=stop, create_symlinks=create_symlinks, delete_symlinks=delete_symlinks)
+
 setup.add_command(setup_sudoers)
 setup.add_command(setup_nginx)
 setup.add_command(reload_nginx)
 setup.add_command(setup_supervisor)
 setup.add_command(setup_redis)
 setup.add_command(setup_letsencrypt)
+setup.add_command(setup_wildcard_ssl)
 setup.add_command(setup_production)
 setup.add_command(setup_auto_update)
 setup.add_command(setup_backups)
@@ -283,3 +328,4 @@ setup.add_command(setup_firewall)
 setup.add_command(set_ssh_port)
 setup.add_command(setup_roles)
 setup.add_command(setup_nginx_proxy_jail)
+setup.add_command(setup_systemd)
