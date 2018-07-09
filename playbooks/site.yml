@@ -6,7 +6,7 @@
   become_user: root
   roles:
     - { role: common,            tags: common                             }
-    - { role: locale,            tags: locale                             }
+  #  - { role: locale,            tags: locale                             }
     - { role: nodejs,            tags: nodejs                             }
   #  - { role: swap,              tags: swap,             when: production }
     - { role: logwatch,          tags: logwatch,         when: production }
