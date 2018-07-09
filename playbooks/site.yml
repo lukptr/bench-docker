@@ -8,7 +8,7 @@
     - { role: common,            tags: common                             }
     - { role: locale,            tags: locale                             }
     - { role: nodejs,            tags: nodejs                             }
-    - { role: swap,              tags: swap,             when: production }
+  #  - { role: swap,              tags: swap,             when: production }
     - { role: logwatch,          tags: logwatch,         when: production }
     - { role: bash_screen_wall,  tags: bash_screen_wall, when: production }
     - { role: frappe_selinux,    tags: frappe_selinux,   when: production }
@@ -20,7 +20,7 @@
     - { role: redis,             tags: redis                              }
     - { role: supervisor,        tags: supervisor,       when: production }
     - { role: nginx,             tags: nginx,            when: production }
-    - { role: fail2ban,          tags: fail2ban,         when: production }
+  #  - { role: fail2ban,          tags: fail2ban,         when: production }
   tasks:
     - name: Set hostname
       hostname: name='{{ hostname }}'
